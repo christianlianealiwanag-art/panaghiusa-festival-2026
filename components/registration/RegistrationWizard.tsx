@@ -26,6 +26,7 @@ const CLAVER_BARANGAYS = [
   "Daywan",
   "Hayanggabon",
   "Ladgaron",
+  "Lapinigan",
   "Magallanes",
   "Panatao",
   "Sapa",
