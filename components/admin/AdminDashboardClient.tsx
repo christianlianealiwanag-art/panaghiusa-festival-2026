@@ -57,9 +57,9 @@ export default function AdminDashboardClient() {
           table: "registrations",
         },
         (payload) => {
-          setRegistrations((r) => [
+          setRegistrations((current) => [
             payload.new as Registration,
-            ...r,
+            ...current,
           ]);
         }
       )
@@ -81,10 +81,7 @@ export default function AdminDashboardClient() {
       }
     }
 
-    if (
-      filterBarangay &&
-      (r.barangay || "") !== filterBarangay
-    ) {
+    if (filterBarangay && (r.barangay || "") !== filterBarangay) {
       return false;
     }
 
@@ -99,15 +96,12 @@ export default function AdminDashboardClient() {
     new Set(
       registrations
         .map((r) => r.barangay)
-        .filter(
-          (barangay): barangay is string =>
-            Boolean(barangay)
-        )
+        .filter((barangay): barangay is string => Boolean(barangay))
     )
   ).sort((a, b) => a.localeCompare(b));
 
   /* =======================================================
-     EXPORT REGISTRATION MASTERLIST
+     EXPORT REGISTRATION MASTERLIST TO EXCEL
   ======================================================= */
 
   function exportRegistrationMasterlist() {
@@ -115,9 +109,7 @@ export default function AdminDashboardClient() {
       (a.explorer_no || "").localeCompare(
         b.explorer_no || "",
         undefined,
-        {
-          numeric: true,
-        }
+        { numeric: true }
       )
     );
 
@@ -168,98 +160,253 @@ export default function AdminDashboardClient() {
   }
 
   /* =======================================================
-     EXPORT SAFARI EXPLORER KIT ACKNOWLEDGMENT RECEIPT
+     PRINT SAFARI EXPLORER KIT ACKNOWLEDGMENT RECEIPT
   ======================================================= */
 
-  function exportSafariKitAcknowledgment() {
+  function printSafariKitAcknowledgment() {
     const sorted = [...registrations].sort((a, b) =>
       (a.explorer_no || "").localeCompare(
         b.explorer_no || "",
         undefined,
-        {
-          numeric: true,
-        }
+        { numeric: true }
       )
     );
 
-    const data = [
-      ["CLAVER CHILDREN'S FESTIVAL"],
-      [
-        "SAFARI EXPLORER KIT – ACKNOWLEDGMENT RECEIPT",
-      ],
-      [
-        "September 5, 2026 | Claver Sports Complex Grounds",
-      ],
-      [],
-      [
-        "I hereby acknowledge receipt of the Safari Explorer Kit issued to the registered child indicated below during the Panaghiusa Festival 2026 – Claver Children's Festival.",
-      ],
-      [],
-      [
-        "No.",
-        "Explorer No.",
-        "Child's Name",
-        "Age",
-        "Barangay",
-        "Parent/Guardian",
-        "Check-In",
-        "Signature",
-      ],
-      ...sorted.map((r, index) => [
-        index + 1,
-        r.explorer_no || "",
-        r.child_name || "",
-        r.age ?? "",
-        r.barangay || "",
-        r.parent_name || "",
-        r.checked_in ? "✓" : "",
-        "",
-      ]),
-    ];
+    if (sorted.length === 0) {
+      alert("There are no registrations to print.");
+      return;
+    }
 
-    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
-    worksheet["!merges"] = [
-      XLSX.utils.decode_range("A1:H1"),
-      XLSX.utils.decode_range("A2:H2"),
-      XLSX.utils.decode_range("A3:H3"),
-      XLSX.utils.decode_range("A5:H5"),
-    ];
+    const rows = sorted
+      .map(
+        (r, index) => `
+          <tr>
+            <td class="center">${index + 1}</td>
+            <td class="center explorer">
+              ${escapeHtml(r.explorer_no || "")}
+            </td>
+            <td>
+              ${escapeHtml(r.child_name || "")}
+            </td>
+            <td class="center">
+              ${r.age ?? ""}
+            </td>
+            <td>
+              ${escapeHtml(r.barangay || "")}
+            </td>
+            <td>
+              ${escapeHtml(r.parent_name || "")}
+            </td>
+            <td class="signature"></td>
+          </tr>
+        `
+      )
+      .join("");
 
-    worksheet["!cols"] = [
-      { wch: 6 },
-      { wch: 18 },
-      { wch: 30 },
-      { wch: 8 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 12 },
-      { wch: 28 },
-    ];
+    const printWindow = window.open("", "_blank");
 
-    worksheet["!rows"] = [
-      { hpt: 24 },
-      { hpt: 28 },
-      { hpt: 22 },
-      { hpt: 10 },
-      { hpt: 42 },
-      { hpt: 10 },
-      { hpt: 24 },
-      ...sorted.map(() => ({ hpt: 30 })),
-    ];
+    if (!printWindow) {
+      alert(
+        "Please allow pop-ups in your browser to print the acknowledgment receipt."
+      );
+      return;
+    }
 
-    const workbook = XLSX.utils.book_new();
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Safari Explorer Kit Acknowledgment Receipt</title>
 
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
-      "Safari Kit Acknowledgment"
-    );
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 10mm;
+            }
 
-    XLSX.writeFile(
-      workbook,
-      "Safari-Explorer-Kit-Acknowledgment-Receipt.xlsx"
-    );
+            * {
+              box-sizing: border-box;
+            }
+
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              margin: 0;
+              color: #000;
+              font-size: 10pt;
+            }
+
+            .header {
+              text-align: center;
+              margin-bottom: 12px;
+            }
+
+            .header h1 {
+              margin: 0;
+              font-size: 18pt;
+              font-weight: 800;
+            }
+
+            .header h2 {
+              margin: 4px 0 0;
+              font-size: 15pt;
+              font-weight: 800;
+            }
+
+            .header p {
+              margin: 5px 0 0;
+              font-size: 10pt;
+            }
+
+            .statement {
+              margin: 12px 0 14px;
+              text-align: justify;
+              line-height: 1.4;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              table-layout: fixed;
+            }
+
+            thead {
+              display: table-header-group;
+            }
+
+            tr {
+              page-break-inside: avoid;
+            }
+
+            th,
+            td {
+              border: 1px solid #000;
+              padding: 5px 6px;
+              vertical-align: middle;
+            }
+
+            th {
+              text-align: center;
+              font-weight: 700;
+              background: #eeeeee;
+            }
+
+            tbody td {
+              height: 38px;
+            }
+
+            .center {
+              text-align: center;
+            }
+
+            .explorer {
+              font-weight: 700;
+            }
+
+            .col-no {
+              width: 5%;
+            }
+
+            .col-explorer {
+              width: 13%;
+            }
+
+            .col-child {
+              width: 21%;
+            }
+
+            .col-age {
+              width: 6%;
+            }
+
+            .col-barangay {
+              width: 15%;
+            }
+
+            .col-parent {
+              width: 22%;
+            }
+
+            .col-signature {
+              width: 18%;
+            }
+
+            .signature {
+              height: 38px;
+            }
+
+            .footer-note {
+              margin-top: 8px;
+              font-size: 8pt;
+              font-style: italic;
+            }
+
+            @media print {
+              .no-print {
+                display: none !important;
+              }
+            }
+          </style>
+        </head>
+
+        <body>
+          <div class="header">
+            <h1>CLAVER CHILDREN'S FESTIVAL</h1>
+            <h2>SAFARI EXPLORER KIT – ACKNOWLEDGMENT RECEIPT</h2>
+            <p>
+              September 5, 2026 | Claver Sports Complex Grounds
+            </p>
+          </div>
+
+          <div class="statement">
+            I hereby acknowledge receipt of the
+            <strong>Safari Explorer Kit</strong> issued to the
+            registered child indicated below during the
+            <strong>
+              Panaghiusa Festival 2026 – Claver Children's Festival
+            </strong>.
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th class="col-no">No.</th>
+                <th class="col-explorer">Explorer No.</th>
+                <th class="col-child">Child's Name</th>
+                <th class="col-age">Age</th>
+                <th class="col-barangay">Barangay</th>
+                <th class="col-parent">Parent/Guardian</th>
+                <th class="col-signature">Signature</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+
+          <p class="footer-note">
+            Signature confirms receipt of the Safari Explorer Kit.
+          </p>
+
+          <script>
+            window.onload = function () {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
   }
 
   /* =======================================================
@@ -273,8 +420,7 @@ export default function AdminDashboardClient() {
       (r) => r.checked_in
     ).length;
 
-    const pendingCount =
-      totalCount - checkedInCount;
+    const pendingCount = totalCount - checkedInCount;
 
     const barangayCounts = new Map<string, number>();
     const genderCounts = new Map<string, number>();
@@ -282,16 +428,14 @@ export default function AdminDashboardClient() {
     const dailyCounts = new Map<string, number>();
 
     for (const r of registrations) {
-      const barangayName =
-        r.barangay || "Not in Claver";
+      const barangayName = r.barangay || "Not in Claver";
 
       barangayCounts.set(
         barangayName,
         (barangayCounts.get(barangayName) || 0) + 1
       );
 
-      const genderName =
-        r.sex || "Unspecified";
+      const genderName = r.sex || "Unspecified";
 
       genderCounts.set(
         genderName,
@@ -306,9 +450,7 @@ export default function AdminDashboardClient() {
       }
 
       const day = r.created_at
-        ? new Date(
-            r.created_at
-          ).toLocaleDateString()
+        ? new Date(r.created_at).toLocaleDateString()
         : "Unknown";
 
       dailyCounts.set(
@@ -372,12 +514,12 @@ export default function AdminDashboardClient() {
   return (
     <div>
       <AdminDashboardCharts
-  data={chartData}
-  loading={loading}
-/>
+        data={chartData}
+        loading={loading}
+      />
 
       {/* ===================================================
-          EXPORT BUTTONS
+          EXPORT / PRINT BUTTONS
       =================================================== */}
 
       <div className="mt-8 flex flex-wrap gap-3">
@@ -392,11 +534,11 @@ export default function AdminDashboardClient() {
 
         <button
           type="button"
-          onClick={exportSafariKitAcknowledgment}
+          onClick={printSafariKitAcknowledgment}
           disabled={registrations.length === 0}
           className="rounded-xl bg-yellow-400 px-5 py-3 font-bold text-green-950 hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
-          🧾 Export Safari Explorer Kit Acknowledgment Receipt
+          🖨 Print Safari Explorer Kit Acknowledgment Receipt
         </button>
       </div>
 
@@ -408,9 +550,7 @@ export default function AdminDashboardClient() {
         <div className="flex-1">
           <input
             value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or explorer no"
             className="w-full rounded-xl border p-3"
           />
@@ -419,9 +559,7 @@ export default function AdminDashboardClient() {
         <div className="flex flex-wrap gap-3">
           <select
             value={filterBarangay}
-            onChange={(e) =>
-              setFilterBarangay(e.target.value)
-            }
+            onChange={(e) => setFilterBarangay(e.target.value)}
             className="rounded-xl border p-3"
           >
             <option value="">
@@ -437,15 +575,17 @@ export default function AdminDashboardClient() {
 
           <select
             value={filterSex}
-            onChange={(e) =>
-              setFilterSex(e.target.value)
-            }
+            onChange={(e) => setFilterSex(e.target.value)}
             className="rounded-xl border p-3"
           >
-            <option value="">All Sex</option>
+            <option value="">
+              All Sex
+            </option>
+
             <option value="Male">
               Male
             </option>
+
             <option value="Female">
               Female
             </option>
@@ -523,17 +663,16 @@ export default function AdminDashboardClient() {
               </tr>
             )}
 
-            {!loading &&
-              filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={12}
-                    className="p-6 text-center"
-                  >
-                    No registrations found.
-                  </td>
-                </tr>
-              )}
+            {!loading && filtered.length === 0 && (
+              <tr>
+                <td
+                  colSpan={12}
+                  className="p-6 text-center"
+                >
+                  No registrations found.
+                </td>
+              </tr>
+            )}
 
             {filtered.map((r) => (
               <tr
