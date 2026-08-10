@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "react-qr-code";
 
-export default function SuccessPage() {
+function SuccessContent() {
   const params = useSearchParams();
   const explorerNo = params.get("id")?.trim() ?? "";
 
@@ -46,11 +47,8 @@ export default function SuccessPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-700 via-green-600 to-yellow-400 p-5 md:p-8">
-      <section
-        id="registration-confirmation"
-        className="w-full max-w-xl rounded-3xl bg-white p-7 text-center shadow-2xl md:p-10"
-      >
+    <main className="min-h-screen bg-green-50 px-4 py-10">
+      <section className="mx-auto max-w-2xl rounded-3xl bg-white p-8 text-center shadow-xl">
         <div className="text-6xl">🦁</div>
 
         <h1 className="mt-3 text-3xl font-black text-green-800 md:text-4xl">
@@ -128,9 +126,19 @@ export default function SuccessPage() {
     </main>
   );
 }
-<Link
-  href="/festival-map"
-  className="flex items-center justify-center rounded-full bg-green-700 px-6 py-3 font-bold text-white transition hover:bg-green-800"
->
-  🗺️ View Festival Map
-</Link>
+
+export default function SuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-green-50 px-4 py-10">
+          <div className="text-center text-green-800">
+            Loading registration details...
+          </div>
+        </main>
+      }
+    >
+      <SuccessContent />
+    </Suspense>
+  );
+}

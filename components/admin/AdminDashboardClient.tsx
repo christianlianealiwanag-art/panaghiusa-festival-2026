@@ -61,7 +61,13 @@ export default function AdminDashboardClient() {
     return true;
   });
 
-  const barangays = Array.from(new Set(registrations.map((r) => r.barangay).filter(Boolean)) as string[]);
+  const barangays = Array.from(
+  new Set(
+    registrations
+      .map((r) => r.barangay)
+      .filter((barangay): barangay is string => Boolean(barangay))
+  )
+);
 
   /* =======================================================
      CHART DATA
