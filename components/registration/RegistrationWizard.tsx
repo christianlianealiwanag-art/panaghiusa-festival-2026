@@ -512,6 +512,20 @@ export default function RegistrationWizard() {
   };
 
   /* =======================================================
+     EDIT INFORMATION FROM REVIEW PAGE
+  ======================================================= */
+
+  const editInformation = () => {
+    setErrors({});
+    setStep(1);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  /* =======================================================
      SUBMIT
   ======================================================= */
 
@@ -1819,6 +1833,20 @@ export default function RegistrationWizard() {
               </div>
 
               {/* =============================================
+                  EDIT INFORMATION
+              ============================================= */}
+
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={editInformation}
+                  className="flex items-center justify-center gap-3 rounded-full border-2 border-green-700 bg-white px-8 py-4 font-bold text-green-800 transition hover:bg-green-50"
+                >
+                  ✏️ Edit Information
+                </button>
+              </div>
+
+              {/* =============================================
                   PRE-REGISTRATION NOTICE
               ============================================= */}
 
@@ -1845,82 +1873,6 @@ export default function RegistrationWizard() {
                   QR-based verification and
                   faster check-in at the venue.
                 </p>
-              </div>
-
-              {/* =============================================
-                  KIT DISCLAIMER
-              ============================================= */}
-
-              <div className="mt-6 rounded-2xl border-2 border-orange-300 bg-orange-50 p-6">
-                <h3 className="text-xl font-bold text-orange-900">
-                  🎒 Important Notice on Safari
-                  Explorer Kits
-                </h3>
-
-                <p className="mt-3 leading-7 text-gray-700">
-                  Safari Explorer Kits are
-                  available{" "}
-                  <strong>
-                    while supplies last.
-                  </strong>
-                </p>
-
-                <p className="mt-3 leading-7 text-gray-700">
-                  Pre-registration{" "}
-                  <strong>
-                    does not guarantee or
-                    reserve a Safari Explorer
-                    Kit.
-                  </strong>{" "}
-                  Kits will be distributed only
-                  at the event venue on a{" "}
-                  <strong>
-                    first-come, first-served
-                    basis
-                  </strong>{" "}
-                  while supplies are available.
-                </p>
-
-                <p className="mt-3 leading-7 text-gray-700">
-                  The registered child must be
-                  physically present at the
-                  venue to claim the kit.
-                </p>
-
-                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
-                  <input
-                    type="checkbox"
-                    name="kitDisclaimerAccepted"
-                    checked={
-                      form.kitDisclaimerAccepted
-                    }
-                    onChange={
-                      handleCheckboxChange
-                    }
-                    className="mt-1 h-5 w-5 accent-green-700"
-                  />
-
-                  <span className="text-sm leading-6 text-gray-700">
-                    <strong>
-                      I understand
-                    </strong>{" "}
-                    that pre-registration does
-                    not guarantee a Safari
-                    Explorer Kit and that kits
-                    will be distributed at the
-                    venue on a first-come,
-                    first-served basis while
-                    supplies last.
-                  </span>
-                </label>
-
-                {errors.kitDisclaimerAccepted && (
-                  <p className="mt-2 text-sm font-medium text-red-600">
-                    {
-                      errors.kitDisclaimerAccepted
-                    }
-                  </p>
-                )}
               </div>
 
               {/* =============================================
@@ -2034,6 +1986,82 @@ export default function RegistrationWizard() {
                 {errors.waiverAccepted && (
                   <p className="mt-2 text-sm font-medium text-red-600">
                     {errors.waiverAccepted}
+                  </p>
+                )}
+              </div>
+
+              {/* =============================================
+                  KIT DISCLAIMER
+              ============================================= */}
+
+              <div className="mt-6 rounded-2xl border-2 border-orange-300 bg-orange-50 p-6">
+                <h3 className="text-xl font-bold text-orange-900">
+                  🎒 Important Notice on Safari
+                  Explorer Kits
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-700">
+                  Safari Explorer Kits are
+                  available{" "}
+                  <strong>
+                    while supplies last.
+                  </strong>
+                </p>
+
+                <p className="mt-3 leading-7 text-gray-700">
+                  Pre-registration{" "}
+                  <strong>
+                    does not guarantee or
+                    reserve a Safari Explorer
+                    Kit.
+                  </strong>{" "}
+                  Kits will be distributed only
+                  at the event venue on a{" "}
+                  <strong>
+                    first-come, first-served
+                    basis
+                  </strong>{" "}
+                  while supplies are available.
+                </p>
+
+                <p className="mt-3 leading-7 text-gray-700">
+                  The registered child must be
+                  physically present at the
+                  venue to claim the kit.
+                </p>
+
+                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                  <input
+                    type="checkbox"
+                    name="kitDisclaimerAccepted"
+                    checked={
+                      form.kitDisclaimerAccepted
+                    }
+                    onChange={
+                      handleCheckboxChange
+                    }
+                    className="mt-1 h-5 w-5 accent-green-700"
+                  />
+
+                  <span className="text-sm leading-6 text-gray-700">
+                    <strong>
+                      I understand
+                    </strong>{" "}
+                    that pre-registration does
+                    not guarantee a Safari
+                    Explorer Kit and that kits
+                    will be distributed at the
+                    venue on a first-come,
+                    first-served basis while
+                    supplies last.
+                  </span>
+                </label>
+
+                {errors.kitDisclaimerAccepted && (
+                  <p className="mt-2 text-sm font-medium text-red-600">
+                    {
+                      errors.kitDisclaimerAccepted
+                    }
                   </p>
                 )}
               </div>
