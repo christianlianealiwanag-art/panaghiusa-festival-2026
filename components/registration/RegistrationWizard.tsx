@@ -1156,9 +1156,6 @@ export default function RegistrationWizard() {
                       className="mb-2 block font-semibold text-gray-700"
                     >
                       Middle Name{" "}
-                      <span className="text-sm font-normal text-gray-500">
-                        (If no middle name, indicate N/A)
-                      </span>{" "}
                       <span className="text-red-600">
                         *
                       </span>
