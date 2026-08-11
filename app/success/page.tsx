@@ -20,36 +20,94 @@ function SuccessContent() {
     }
 
     const serializer = new XMLSerializer();
-    const source = serializer.serializeToString(svg);
+    let source = serializer.serializeToString(svg);
 
-    const svgWithHeader = source.includes("xmlns=")
-      ? source
-      : source.replace(
-          "<svg",
-          '<svg xmlns="http://www.w3.org/2000/svg"'
-        );
+    if (!source.includes("xmlns=")) {
+      source = source.replace(
+        "<svg",
+        '<svg xmlns="http://www.w3.org/2000/svg"'
+      );
+    }
 
-    const blob = new Blob([svgWithHeader], {
+    const svgBlob = new Blob([source], {
       type: "image/svg+xml;charset=utf-8",
     });
 
-    const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement("a");
+    const svgUrl = URL.createObjectURL(svgBlob);
 
-    downloadLink.href = url;
-    downloadLink.download = `${explorerNo}-QR.svg`;
+    const image = new Image();
 
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    downloadLink.remove();
+    image.onload = () => {
+      const padding = 40;
+      const qrSize = 500;
 
-    URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = qrSize + padding * 2;
+      canvas.height = qrSize + padding * 2;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        URL.revokeObjectURL(svgUrl);
+        alert("Unable to prepare the QR Code for download.");
+        return;
+      }
+
+      // White background
+      context.fillStyle = "#ffffff";
+      context.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      context.drawImage(
+        image,
+        padding,
+        padding,
+        qrSize,
+        qrSize
+      );
+
+      URL.revokeObjectURL(svgUrl);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert("Unable to download the QR Code.");
+          return;
+        }
+
+        const pngUrl = URL.createObjectURL(blob);
+        const downloadLink = document.createElement("a");
+
+        downloadLink.href = pngUrl;
+        downloadLink.download = `${explorerNo}-QR.png`;
+
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        downloadLink.remove();
+
+        setTimeout(() => {
+          URL.revokeObjectURL(pngUrl);
+        }, 1000);
+      }, "image/png");
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(svgUrl);
+      alert("Unable to prepare the QR Code for download.");
+    };
+
+    image.src = svgUrl;
   };
 
   return (
     <main className="min-h-screen bg-green-50 px-4 py-10">
       <section className="mx-auto max-w-2xl rounded-3xl bg-white p-8 text-center shadow-xl">
-        <div className="text-6xl">🦁</div>
+        <div className="text-6xl">
+          🦁
+        </div>
 
         <h1 className="mt-3 text-3xl font-black text-green-800 md:text-4xl">
           Registration Successful!
@@ -77,6 +135,8 @@ function SuccessContent() {
               value={explorerNo}
               size={220}
               level="H"
+              bgColor="#FFFFFF"
+              fgColor="#000000"
               title={`QR Code for ${explorerNo}`}
             />
           </div>
@@ -92,33 +152,28 @@ function SuccessContent() {
           </p>
 
           <p className="text-gray-600">
-            The volunteer will scan it and confirm the child’s arrival.
+            The volunteer will scan it and confirm the child&apos;s arrival.
           </p>
         </div>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-4 print:hidden">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            disabled={!explorerNo}
-            className="rounded-full bg-yellow-400 px-7 py-3 font-bold text-green-950 hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            🖨 Print
-          </button>
-
+        <div className="mt-10 flex justify-center">
           <button
             type="button"
             onClick={downloadQr}
             disabled={!explorerNo}
-            className="rounded-full bg-green-700 px-7 py-3 font-bold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+            className="rounded-full bg-green-700 px-8 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            📥 Download QR
+            📥 Download QR Code
           </button>
         </div>
 
+        <p className="mt-4 text-sm text-gray-500">
+          The QR Code will be saved as a PNG image.
+        </p>
+
         <Link
           href="/"
-          className="mt-8 inline-block font-semibold text-green-700 underline print:hidden"
+          className="mt-8 inline-block font-semibold text-green-700 underline"
         >
           ← Back to Home
         </Link>
