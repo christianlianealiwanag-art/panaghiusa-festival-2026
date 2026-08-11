@@ -9,6 +9,10 @@ function SuccessContent() {
   const params = useSearchParams();
   const explorerNo = params.get("id")?.trim() ?? "";
 
+  /* =======================================================
+     CREATE QR CODE AS PNG
+  ======================================================= */
+
   const createQrPngBlob = (): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const svg = document.getElementById(
@@ -35,11 +39,12 @@ function SuccessContent() {
       });
 
       const svgUrl = URL.createObjectURL(svgBlob);
+
       const image = new Image();
 
       image.onload = () => {
-        const padding = 50;
-        const qrSize = 600;
+        const qrSize = 700;
+        const padding = 70;
 
         const canvas = document.createElement("canvas");
 
@@ -54,7 +59,8 @@ function SuccessContent() {
           return;
         }
 
-        context.fillStyle = "#ffffff";
+        // White background
+        context.fillStyle = "#FFFFFF";
         context.fillRect(
           0,
           0,
@@ -62,6 +68,7 @@ function SuccessContent() {
           canvas.height
         );
 
+        // QR Code
         context.drawImage(
           image,
           padding,
@@ -77,7 +84,7 @@ function SuccessContent() {
             if (!blob) {
               reject(
                 new Error(
-                  "Unable to prepare QR Code for saving."
+                  "Unable to create QR Code PNG."
                 )
               );
               return;
@@ -104,6 +111,11 @@ function SuccessContent() {
     });
   };
 
+  /* =======================================================
+     SAVE / SHARE QR CODE
+     BEST OPTION FOR ANDROID + IPHONE
+  ======================================================= */
+
   const saveOrShareQr = async () => {
     if (!explorerNo) {
       alert("The QR Code is not ready.");
@@ -113,18 +125,19 @@ function SuccessContent() {
     try {
       const blob = await createQrPngBlob();
 
+      const fileName = `${explorerNo}-QR.png`;
+
       const file = new File(
         [blob],
-        `${explorerNo}-QR.png`,
+        fileName,
         {
           type: "image/png",
         }
       );
 
       /*
-       * Mobile phones:
-       * Use the native Share / Save interface when
-       * file sharing is supported.
+       * MOBILE:
+       * Try native Android/iPhone share sheet first.
        */
       if (
         typeof navigator.share === "function" &&
@@ -136,51 +149,50 @@ function SuccessContent() {
         try {
           await navigator.share({
             files: [file],
-            title: `Explorer QR Code - ${explorerNo}`,
-            text: `Claver Children's Festival Explorer Number: ${explorerNo}`,
+            title: "Claver Children's Festival QR Code",
+            text: `Explorer Number: ${explorerNo}`,
           });
 
           return;
-        } catch (shareError) {
+        } catch (error) {
           /*
-           * If the user simply closes the Share sheet,
-           * don't show an unnecessary error message.
+           * User intentionally closed the share menu.
            */
           if (
-            shareError instanceof DOMException &&
-            shareError.name === "AbortError"
+            error instanceof DOMException &&
+            error.name === "AbortError"
           ) {
             return;
           }
 
           console.warn(
-            "Native sharing failed. Falling back to download.",
-            shareError
+            "Native sharing failed.",
+            error
           );
         }
       }
 
       /*
-       * Desktop / unsupported mobile browsers:
-       * Fall back to normal PNG download.
+       * FALLBACK:
+       * Standard browser download.
        */
-      const pngUrl = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
 
-      const downloadLink =
-        document.createElement("a");
+      const anchor = document.createElement("a");
 
-      downloadLink.href = pngUrl;
-      downloadLink.download =
-        `${explorerNo}-QR.png`;
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.style.display = "none";
 
-      document.body.appendChild(downloadLink);
+      document.body.appendChild(anchor);
 
-      downloadLink.click();
-      downloadLink.remove();
+      anchor.click();
+
+      document.body.removeChild(anchor);
 
       setTimeout(() => {
-        URL.revokeObjectURL(pngUrl);
-      }, 1500);
+        URL.revokeObjectURL(url);
+      }, 5000);
     } catch (error) {
       console.error(
         "QR save/share error:",
@@ -188,7 +200,173 @@ function SuccessContent() {
       );
 
       alert(
-        "Unable to save the QR Code. Please take a screenshot of the QR Code instead."
+        "Your browser could not save the QR Code automatically. Please use the Open QR Image button below."
+      );
+    }
+  };
+
+  /* =======================================================
+     OPEN QR AS STANDALONE IMAGE
+     ANDROID FALLBACK
+  ======================================================= */
+
+  const openQrImage = async () => {
+    if (!explorerNo) {
+      alert("The QR Code is not ready.");
+      return;
+    }
+
+    /*
+     * Open the tab immediately from the user's click.
+     * This helps prevent Android browsers from treating
+     * the new window as a blocked pop-up.
+     */
+    const newWindow = window.open("", "_blank");
+
+    if (!newWindow) {
+      alert(
+        "Please allow pop-ups for this website, then try again."
+      );
+      return;
+    }
+
+    newWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Preparing QR Code...</title>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+          />
+        </head>
+
+        <body
+          style="
+            margin:0;
+            display:flex;
+            min-height:100vh;
+            align-items:center;
+            justify-content:center;
+            font-family:Arial,sans-serif;
+            background:#ffffff;
+          "
+        >
+          <p>Preparing QR Code...</p>
+        </body>
+      </html>
+    `);
+
+    try {
+      const blob = await createQrPngBlob();
+
+      const url = URL.createObjectURL(blob);
+
+      newWindow.document.open();
+
+      newWindow.document.write(`
+        <!DOCTYPE html>
+
+        <html>
+          <head>
+            <title>${explorerNo} QR Code</title>
+
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1"
+            />
+
+            <style>
+              body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: #ffffff;
+                font-family: Arial, sans-serif;
+                padding: 24px;
+                box-sizing: border-box;
+                text-align: center;
+              }
+
+              img {
+                width: min(90vw, 600px);
+                height: auto;
+              }
+
+              h2 {
+                color: #166534;
+                margin-bottom: 5px;
+              }
+
+              p {
+                color: #4b5563;
+                line-height: 1.5;
+              }
+
+              .instruction {
+                margin-top: 20px;
+                max-width: 500px;
+                padding: 15px;
+                background: #fefce8;
+                border-radius: 12px;
+              }
+            </style>
+          </head>
+
+          <body>
+
+            <h2>
+              Explorer No. ${explorerNo}
+            </h2>
+
+            <p>
+              Claver Children's Festival
+            </p>
+
+            <img
+              src="${url}"
+              alt="QR Code for ${explorerNo}"
+            />
+
+            <div class="instruction">
+              <strong>Android:</strong>
+              Press and hold the QR Code image,
+              then select
+              <strong>
+                Download image
+              </strong>
+              or
+              <strong>
+                Save image
+              </strong>.
+            </div>
+
+          </body>
+        </html>
+      `);
+
+      newWindow.document.close();
+
+      /*
+       * Keep the Blob URL available long enough for
+       * Android users to long-press/save the image.
+       */
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 120000);
+    } catch (error) {
+      console.error(
+        "Open QR image error:",
+        error
+      );
+
+      newWindow.close();
+
+      alert(
+        "Unable to open the QR Code image. Please take a screenshot of the QR Code."
       );
     }
   };
@@ -196,6 +374,7 @@ function SuccessContent() {
   return (
     <main className="min-h-screen bg-green-50 px-4 py-10">
       <section className="mx-auto max-w-2xl rounded-3xl bg-white p-8 text-center shadow-xl">
+
         <div className="text-6xl">
           🦁
         </div>
@@ -209,7 +388,10 @@ function SuccessContent() {
           registration volunteers upon arrival.
         </p>
 
+        {/* EXPLORER NUMBER */}
+
         <div className="mt-8 rounded-2xl bg-yellow-50 p-6">
+
           <p className="text-lg text-gray-500">
             Your Explorer Number
           </p>
@@ -217,10 +399,14 @@ function SuccessContent() {
           <h2 className="mt-3 break-words text-3xl font-black text-green-800 md:text-5xl">
             {explorerNo || "Not Available"}
           </h2>
+
         </div>
+
+        {/* QR CODE */}
 
         {explorerNo ? (
           <div className="mt-8 inline-block rounded-2xl bg-white p-6 shadow-xl">
+
             <QRCode
               id="explorer-qr-code"
               value={explorerNo}
@@ -230,15 +416,21 @@ function SuccessContent() {
               fgColor="#000000"
               title={`QR Code for ${explorerNo}`}
             />
+
           </div>
         ) : (
           <div className="mt-8 rounded-2xl bg-red-50 p-6 text-red-700">
-            Explorer Number was not found. Please
-            return to registration.
+
+            Explorer Number was not found.
+            Please return to registration.
+
           </div>
         )}
 
+        {/* INSTRUCTIONS */}
+
         <div className="mt-8 space-y-2">
+
           <p className="font-bold text-green-800">
             Present this QR Code
           </p>
@@ -247,29 +439,50 @@ function SuccessContent() {
             The volunteer will scan it and confirm
             the child&apos;s arrival.
           </p>
+
         </div>
 
-        <div className="mt-10 flex justify-center">
+        {/* SAVE / SHARE */}
+
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+
           <button
             type="button"
             onClick={saveOrShareQr}
             disabled={!explorerNo}
-            className="rounded-full bg-green-700 px-8 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+            className="w-full rounded-full bg-green-700 px-8 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-400 sm:w-auto"
           >
             📥 Save / Share QR Code
           </button>
+
+          <button
+            type="button"
+            onClick={openQrImage}
+            disabled={!explorerNo}
+            className="w-full rounded-full border-2 border-green-700 bg-white px-8 py-4 font-bold text-green-800 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 sm:w-auto"
+          >
+            🖼 Open QR Image
+          </button>
+
         </div>
 
-        <p className="mt-4 text-sm text-gray-500">
-          On mobile, choose Save Image, Files, Photos,
-          Gallery, or another available option from
-          your phone&apos;s share menu.
-        </p>
+        {/* ANDROID HELP */}
 
-        <p className="mt-2 text-xs text-gray-400">
-          If saving is unavailable, you may also take
-          a screenshot of the QR Code.
-        </p>
+        <div className="mx-auto mt-6 max-w-lg rounded-2xl bg-yellow-50 p-4 text-sm text-gray-600">
+
+          <p className="font-bold text-green-800">
+            Android users
+          </p>
+
+          <p className="mt-1">
+            If Save / Share does not save the QR Code,
+            tap <strong>Open QR Image</strong>.
+            Press and hold the image, then choose
+            <strong> Download image</strong> or
+            <strong> Save image</strong>.
+          </p>
+
+        </div>
 
         <Link
           href="/"
@@ -277,6 +490,7 @@ function SuccessContent() {
         >
           ← Back to Home
         </Link>
+
       </section>
     </main>
   );
