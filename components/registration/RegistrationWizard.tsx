@@ -238,14 +238,18 @@ export default function RegistrationWizard() {
   const buildNameKey = (
     surname: string,
     firstName: string,
-    middleName: string
+    middleName: string,
+    age: string
   ) => {
     /*
-     * Only the middle name's first letter is used, so that
-     * "Aliwanag" and "A." (or a blank middle name) are
-     * treated as the same child instead of allowing a
-     * duplicate registration through inconsistent middle
-     * name formatting.
+     * Duplicate protection uses the child's normalized
+     * surname + first name + middle initial + age.
+     *
+     * This means:
+     * - Same child name + same age = duplicate
+     * - Same child name + different age = allowed
+     *
+     * N/A / NA / NONE are treated as having no middle name.
      */
     const cleanedMiddleName = middleName.trim().toLowerCase();
 
@@ -256,7 +260,7 @@ export default function RegistrationWizard() {
         ? ""
         : middleName.trim().charAt(0);
 
-    return `${surname}${firstName}${middleInitial}`
+    return `${surname}${firstName}${middleInitial}${age}`
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
   };
@@ -533,13 +537,14 @@ export default function RegistrationWizard() {
       const childNameKey = buildNameKey(
         form.childSurname,
         form.childFirstName,
-        form.childMiddleName
+        form.childMiddleName,
+        form.age
       );
 
       /*
        * Check for an existing registration under
-       * the same child name before inserting, so we
-       * can show a friendly message instead of a
+       * the same normalized child name + age before inserting,
+       * so we can show a friendly message instead of a
        * raw database error in the common case.
        */
       const { data: existingChild, error: existingChildError } =
@@ -558,7 +563,7 @@ export default function RegistrationWizard() {
 
       if (existingChild && existingChild.length > 0) {
         alert(
-          "This child is already registered for the festival. Each child may only be registered once."
+          "A child with the same name and age is already registered for the festival."
         );
         return;
       }
@@ -685,7 +690,7 @@ export default function RegistrationWizard() {
          */
         if (error.code === "23505") {
           alert(
-            "This child is already registered for the festival. Each child may only be registered once."
+            "A child with the same name and age is already registered for the festival."
           );
           return;
         }
