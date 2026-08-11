@@ -247,9 +247,14 @@ export default function RegistrationWizard() {
      * duplicate registration through inconsistent middle
      * name formatting.
      */
-    const middleInitial = middleName
-      .trim()
-      .charAt(0);
+    const cleanedMiddleName = middleName.trim().toLowerCase();
+
+    const middleInitial =
+      cleanedMiddleName === "n/a" ||
+      cleanedMiddleName === "na" ||
+      cleanedMiddleName === "none"
+        ? ""
+        : middleName.trim().charAt(0);
 
     return `${surname}${firstName}${middleInitial}`
       .toLowerCase()
@@ -328,6 +333,11 @@ export default function RegistrationWizard() {
     if (!form.childFirstName.trim()) {
       newErrors.childFirstName =
         "Child's first name is required.";
+    }
+
+    if (!form.childMiddleName.trim()) {
+      newErrors.childMiddleName =
+        "Child's middle name is required. Enter N/A if the child has no middle name.";
     }
 
     if (!form.age.trim()) {
@@ -1140,20 +1150,34 @@ export default function RegistrationWizard() {
                       htmlFor="childMiddleName"
                       className="mb-2 block font-semibold text-gray-700"
                     >
-                      Middle Name
+                      Middle Name{" "}
+                      <span className="text-red-600">
+                        *
+                      </span>
                     </label>
 
                     <input
                       id="childMiddleName"
                       name="childMiddleName"
                       type="text"
-                      placeholder="Middle name"
+                      placeholder="Enter middle name or N/A if none"
                       value={form.childMiddleName}
                       onChange={handleChange}
+                      autoComplete="additional-name"
                       className={inputClassName(
                         "childMiddleName"
                       )}
                     />
+
+                    {errors.childMiddleName ? (
+                      <p className="mt-2 text-sm font-medium text-red-600">
+                        {errors.childMiddleName}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-500">
+                        If the child has no middle name, please enter N/A.
+                      </p>
+                    )}
                   </div>
                 </div>
 
