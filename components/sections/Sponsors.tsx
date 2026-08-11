@@ -3,14 +3,38 @@
 import Image from "next/image";
 
 const sponsors = [
-  { src: "/images/sponsors/thpal.png", alt: "THPAL" },
-  { src: "/images/sponsors/nac.png", alt: "NAC" },
-  { src: "/images/sponsors/tmc.png", alt: "TMC" },
-  { src: "/images/sponsors/pgmc.png", alt: "PGMC" },
-  { src: "/images/sponsors/bugar.jpg", alt: "BUGAR" },
-  { src: "/images/sponsors/vicegeed.jpg", alt: "Vicegeed" },
-  { src: "/images/sponsors/virginia.png", alt: "Virginia" },
-  { src: "/images/sponsors/eatzone.jpg", alt: "Eatzone" },
+  {
+    src: "/images/sponsors/thpal.png",
+    alt: "THPAL",
+  },
+  {
+    src: "/images/sponsors/nac.png",
+    alt: "NAC",
+  },
+  {
+    src: "/images/sponsors/tmc.png",
+    alt: "TMC",
+  },
+  {
+    src: "/images/sponsors/pgmc.png",
+    alt: "PGMC",
+  },
+  {
+    src: "/images/sponsors/bugar.jpg",
+    alt: "BUGAR",
+  },
+  {
+    src: "/images/sponsors/vicegeed.jpg",
+    alt: "Vicegeed",
+  },
+  {
+    src: "/images/sponsors/virginia.png",
+    alt: "Virginia",
+  },
+  {
+    src: "/images/sponsors/eatzone.jpg",
+    alt: "Eatzone",
+  },
 ];
 
 export default function Sponsors() {
@@ -30,9 +54,10 @@ export default function Sponsors() {
           </p>
         </div>
 
-        {/* SPONSOR LOGOS + INDIVIDUAL SPONSOR */}
+        {/* SPONSOR LOGOS AND INDIVIDUAL SPONSOR */}
         <div className="grid grid-cols-2 items-center gap-10 md:grid-cols-3 lg:grid-cols-4">
 
+          {/* LOGO SPONSORS */}
           {sponsors.map((sponsor) => (
             <div
               key={sponsor.src}
@@ -52,11 +77,7 @@ export default function Sponsors() {
           <div className="flex min-h-[130px] items-center justify-center">
             <div className="flex min-h-[110px] w-full max-w-[230px] flex-col items-center justify-center rounded-2xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-center shadow-sm transition duration-300 hover:scale-105">
 
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">
-                Festival Partner
-              </p>
-
-              <p className="mt-2 text-lg font-black leading-tight text-green-800">
+              <p className="text-lg font-black leading-tight text-green-800">
                 KARISHMA
                 <br />
                 GOKIANGKEE-GOCOTANO
