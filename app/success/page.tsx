@@ -9,97 +9,188 @@ function SuccessContent() {
   const params = useSearchParams();
   const explorerNo = params.get("id")?.trim() ?? "";
 
-  const downloadQr = () => {
-    const svg = document.getElementById(
-      "explorer-qr-code"
-    ) as SVGSVGElement | null;
+  const createQrPngBlob = (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const svg = document.getElementById(
+        "explorer-qr-code"
+      ) as SVGSVGElement | null;
 
-    if (!svg || !explorerNo) {
+      if (!svg || !explorerNo) {
+        reject(new Error("QR Code is not ready."));
+        return;
+      }
+
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+
+      if (!source.includes("xmlns=")) {
+        source = source.replace(
+          "<svg",
+          '<svg xmlns="http://www.w3.org/2000/svg"'
+        );
+      }
+
+      const svgBlob = new Blob([source], {
+        type: "image/svg+xml;charset=utf-8",
+      });
+
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const image = new Image();
+
+      image.onload = () => {
+        const padding = 50;
+        const qrSize = 600;
+
+        const canvas = document.createElement("canvas");
+
+        canvas.width = qrSize + padding * 2;
+        canvas.height = qrSize + padding * 2;
+
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          URL.revokeObjectURL(svgUrl);
+          reject(new Error("Unable to create QR image."));
+          return;
+        }
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        context.drawImage(
+          image,
+          padding,
+          padding,
+          qrSize,
+          qrSize
+        );
+
+        URL.revokeObjectURL(svgUrl);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(
+                new Error(
+                  "Unable to prepare QR Code for saving."
+                )
+              );
+              return;
+            }
+
+            resolve(blob);
+          },
+          "image/png",
+          1
+        );
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+
+        reject(
+          new Error(
+            "Unable to prepare QR Code image."
+          )
+        );
+      };
+
+      image.src = svgUrl;
+    });
+  };
+
+  const saveOrShareQr = async () => {
+    if (!explorerNo) {
       alert("The QR Code is not ready.");
       return;
     }
 
-    const serializer = new XMLSerializer();
-    let source = serializer.serializeToString(svg);
+    try {
+      const blob = await createQrPngBlob();
 
-    if (!source.includes("xmlns=")) {
-      source = source.replace(
-        "<svg",
-        '<svg xmlns="http://www.w3.org/2000/svg"'
+      const file = new File(
+        [blob],
+        `${explorerNo}-QR.png`,
+        {
+          type: "image/png",
+        }
       );
-    }
 
-    const svgBlob = new Blob([source], {
-      type: "image/svg+xml;charset=utf-8",
-    });
+      /*
+       * Mobile phones:
+       * Use the native Share / Save interface when
+       * file sharing is supported.
+       */
+      if (
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({
+          files: [file],
+        })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Explorer QR Code - ${explorerNo}`,
+            text: `Claver Children's Festival Explorer Number: ${explorerNo}`,
+          });
 
-    const svgUrl = URL.createObjectURL(svgBlob);
+          return;
+        } catch (shareError) {
+          /*
+           * If the user simply closes the Share sheet,
+           * don't show an unnecessary error message.
+           */
+          if (
+            shareError instanceof DOMException &&
+            shareError.name === "AbortError"
+          ) {
+            return;
+          }
 
-    const image = new Image();
-
-    image.onload = () => {
-      const padding = 40;
-      const qrSize = 500;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = qrSize + padding * 2;
-      canvas.height = qrSize + padding * 2;
-
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        URL.revokeObjectURL(svgUrl);
-        alert("Unable to prepare the QR Code for download.");
-        return;
+          console.warn(
+            "Native sharing failed. Falling back to download.",
+            shareError
+          );
+        }
       }
 
-      // White background
-      context.fillStyle = "#ffffff";
-      context.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
+      /*
+       * Desktop / unsupported mobile browsers:
+       * Fall back to normal PNG download.
+       */
+      const pngUrl = URL.createObjectURL(blob);
+
+      const downloadLink =
+        document.createElement("a");
+
+      downloadLink.href = pngUrl;
+      downloadLink.download =
+        `${explorerNo}-QR.png`;
+
+      document.body.appendChild(downloadLink);
+
+      downloadLink.click();
+      downloadLink.remove();
+
+      setTimeout(() => {
+        URL.revokeObjectURL(pngUrl);
+      }, 1500);
+    } catch (error) {
+      console.error(
+        "QR save/share error:",
+        error
       );
 
-      context.drawImage(
-        image,
-        padding,
-        padding,
-        qrSize,
-        qrSize
+      alert(
+        "Unable to save the QR Code. Please take a screenshot of the QR Code instead."
       );
-
-      URL.revokeObjectURL(svgUrl);
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          alert("Unable to download the QR Code.");
-          return;
-        }
-
-        const pngUrl = URL.createObjectURL(blob);
-        const downloadLink = document.createElement("a");
-
-        downloadLink.href = pngUrl;
-        downloadLink.download = `${explorerNo}-QR.png`;
-
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-
-        setTimeout(() => {
-          URL.revokeObjectURL(pngUrl);
-        }, 1000);
-      }, "image/png");
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(svgUrl);
-      alert("Unable to prepare the QR Code for download.");
-    };
-
-    image.src = svgUrl;
+    }
   };
 
   return (
@@ -114,8 +205,8 @@ function SuccessContent() {
         </h1>
 
         <p className="mt-3 text-gray-600">
-          Save this QR Code and present it to the registration volunteers
-          upon arrival.
+          Save this QR Code and present it to the
+          registration volunteers upon arrival.
         </p>
 
         <div className="mt-8 rounded-2xl bg-yellow-50 p-6">
@@ -142,7 +233,8 @@ function SuccessContent() {
           </div>
         ) : (
           <div className="mt-8 rounded-2xl bg-red-50 p-6 text-red-700">
-            Explorer Number was not found. Please return to registration.
+            Explorer Number was not found. Please
+            return to registration.
           </div>
         )}
 
@@ -152,23 +244,31 @@ function SuccessContent() {
           </p>
 
           <p className="text-gray-600">
-            The volunteer will scan it and confirm the child&apos;s arrival.
+            The volunteer will scan it and confirm
+            the child&apos;s arrival.
           </p>
         </div>
 
         <div className="mt-10 flex justify-center">
           <button
             type="button"
-            onClick={downloadQr}
+            onClick={saveOrShareQr}
             disabled={!explorerNo}
             className="rounded-full bg-green-700 px-8 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            📥 Download QR Code
+            📥 Save / Share QR Code
           </button>
         </div>
 
         <p className="mt-4 text-sm text-gray-500">
-          The QR Code will be saved as a PNG image.
+          On mobile, choose Save Image, Files, Photos,
+          Gallery, or another available option from
+          your phone&apos;s share menu.
+        </p>
+
+        <p className="mt-2 text-xs text-gray-400">
+          If saving is unavailable, you may also take
+          a screenshot of the QR Code.
         </p>
 
         <Link
