@@ -1156,6 +1156,9 @@ export default function RegistrationWizard() {
                       className="mb-2 block font-semibold text-gray-700"
                     >
                       Middle Name{" "}
+                      <span className="text-sm font-normal text-gray-500">
+                        (If no middle name, indicate N/A)
+                      </span>{" "}
                       <span className="text-red-600">
                         *
                       </span>
@@ -1165,7 +1168,7 @@ export default function RegistrationWizard() {
                       id="childMiddleName"
                       name="childMiddleName"
                       type="text"
-                      placeholder="Enter middle name or N/A if none"
+                      placeholder="Enter middle name or N/A"
                       value={form.childMiddleName}
                       onChange={handleChange}
                       autoComplete="additional-name"
@@ -1174,13 +1177,9 @@ export default function RegistrationWizard() {
                       )}
                     />
 
-                    {errors.childMiddleName ? (
+                    {errors.childMiddleName && (
                       <p className="mt-2 text-sm font-medium text-red-600">
                         {errors.childMiddleName}
-                      </p>
-                    ) : (
-                      <p className="mt-2 text-xs text-gray-500">
-                        If the child has no middle name, please enter N/A.
                       </p>
                     )}
                   </div>
