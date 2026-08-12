@@ -36,6 +36,30 @@ const CLAVER_BARANGAYS = [
   "Wangke",
 ];
 
+const WAIVER_VERSION = "CCF-2026-V1";
+
+const WAIVER_FULL_TEXT = `
+PARENT / GUARDIAN WAIVER, CONSENT & ACKNOWLEDGMENT
+
+1. I certify that the information provided in this registration is true and correct to the best of my knowledge and that I am the parent, legal guardian, or duly authorized adult responsible for the child being registered.
+Bisaya: Gipamatud-an nako nga tinuod ug husto ang mga impormasyon nga akong gihatag niini nga registration sumala sa akong nahibaloan, ug ako ang ginikanan, legal guardian, o awtorisadong hamtong nga responsable sa bata nga gi-register.
+
+2. I voluntarily give permission for the child named in this registration to participate in the Claver Children's Festival – Safari Adventure.
+Bisaya: Boluntaryo nakong gitugotan ang bata nga nakapangalan niini nga registration nga moapil sa Claver Children's Festival – Safari Adventure.
+
+3. I understand that the event includes recreational, educational, interactive, entertainment, and child-oriented activities, and that ordinary risks may be associated with participation in these activities.
+Bisaya: Nasabtan nako nga adunay mga dula, educational ug interactive activities, kalingawan, ug uban pang kalihokan para sa mga bata, ug adunay kasagarang risgo nga mahimong kauban sa pag-apil niini nga mga kalihokan.
+
+4. I agree to comply with event guidelines, safety instructions, and the directions of authorized event personnel.
+Bisaya: Mouyon ko nga sundon ang mga lagda sa event, safety instructions, ug mga panudlo sa awtorisadong personnel sa kalihokan.
+
+5. In case of an emergency, I authorize the event organizers, designated personnel, and medical responders to provide appropriate first aid and/or facilitate necessary medical assistance when reasonably required.
+Bisaya: Kung adunay emergency, gitugotan nako ang organizers, designated personnel, ug medical responders nga mohatag og angay nga first aid ug/o motabang sa pagpa-medical assistance kung gikinahanglan.
+
+6. I confirm that I have read and understood the Parent/Guardian Waiver, Consent & Acknowledgment above, including the Bisaya explanations provided for clarity, and I voluntarily agree to its terms.
+Bisaya: Gipamatud-an nako nga akong nabasa ug nasabtan ang Parent/Guardian Waiver, Consent & Acknowledgment sa taas, apil ang Bisaya nga pagpasabot aron mas klaro, ug boluntaryo akong mouyon sa mga kondisyon niini.
+`.trim();
+
 /* =========================================================
    FORM TYPE
 ========================================================= */
@@ -69,8 +93,13 @@ type FormData = {
   emergencyPhone: string;
 
   /* Agreements */
+  certificationAccepted: boolean;
+  participationConsent: boolean;
+  riskAcknowledgment: boolean;
+  safetyRulesAccepted: boolean;
+  emergencyConsent: boolean;
+  fullWaiverAccepted: boolean;
   kitDisclaimerAccepted: boolean;
-  waiverAccepted: boolean;
 };
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
@@ -103,8 +132,13 @@ const initialForm: FormData = {
   emergencyName: "",
   emergencyPhone: "",
 
+  certificationAccepted: false,
+  participationConsent: false,
+  riskAcknowledgment: false,
+  safetyRulesAccepted: false,
+  emergencyConsent: false,
+  fullWaiverAccepted: false,
   kitDisclaimerAccepted: false,
-  waiverAccepted: false,
 };
 
 /* =========================================================
@@ -433,14 +467,39 @@ export default function RegistrationWizard() {
   const validateStep3 = () => {
     const newErrors: FormErrors = {};
 
+    if (!form.certificationAccepted) {
+      newErrors.certificationAccepted =
+        "Please certify that the registration information is true and correct.";
+    }
+
+    if (!form.participationConsent) {
+      newErrors.participationConsent =
+        "Please give consent for the child's participation.";
+    }
+
+    if (!form.riskAcknowledgment) {
+      newErrors.riskAcknowledgment =
+        "Please acknowledge the ordinary risks associated with the activities.";
+    }
+
+    if (!form.safetyRulesAccepted) {
+      newErrors.safetyRulesAccepted =
+        "Please agree to follow the event and safety instructions.";
+    }
+
+    if (!form.emergencyConsent) {
+      newErrors.emergencyConsent =
+        "Please provide consent for appropriate emergency assistance.";
+    }
+
+    if (!form.fullWaiverAccepted) {
+      newErrors.fullWaiverAccepted =
+        "Please confirm that you have read and understood the full waiver and consent.";
+    }
+
     if (!form.kitDisclaimerAccepted) {
       newErrors.kitDisclaimerAccepted =
         "Please acknowledge the Safari Explorer Kit notice.";
-    }
-
-    if (!form.waiverAccepted) {
-      newErrors.waiverAccepted =
-        "Please read and accept the Parent/Guardian Waiver and Consent.";
     }
 
     setErrors(newErrors);
@@ -672,12 +731,47 @@ export default function RegistrationWizard() {
                 form.emergencyPhone
               ),
 
-            /* Consent */
+            /* Consent / Waiver Record */
+            certification_accepted:
+              form.certificationAccepted,
+
+            participation_consent:
+              form.participationConsent,
+
+            risk_acknowledgment:
+              form.riskAcknowledgment,
+
+            safety_rules_accepted:
+              form.safetyRulesAccepted,
+
+            emergency_consent:
+              form.emergencyConsent,
+
+            full_waiver_accepted:
+              form.fullWaiverAccepted,
+
             kit_disclaimer_accepted:
               form.kitDisclaimerAccepted,
 
+            /* Legacy field kept for compatibility */
             waiver_accepted:
-              form.waiverAccepted,
+              form.fullWaiverAccepted,
+
+            waiver_signatory_name:
+              buildFullName(
+                form.parentSurname,
+                form.parentFirstName,
+                form.parentMiddleName
+              ),
+
+            waiver_relationship:
+              form.relationship,
+
+            waiver_version:
+              WAIVER_VERSION,
+
+            waiver_full_text:
+              WAIVER_FULL_TEXT,
 
             waiver_accepted_at:
               new Date().toISOString(),
@@ -1856,27 +1950,35 @@ export default function RegistrationWizard() {
                 </h3>
 
                 <p className="mt-3 leading-7 text-gray-700">
-                  Pre-registration helps the
-                  organizers estimate the
-                  expected number of children,
-                  prepare event logistics and
-                  resources, and facilitate a
-                  faster and more organized
-                  check-in process on the day of
-                  the festival.
+                  Pre-registration helps the organizers estimate the expected
+                  number of children, prepare event logistics and resources,
+                  and facilitate a faster and more organized check-in process
+                  on the day of the festival.
+                </p>
+
+                <p className="mt-3 rounded-xl bg-white/80 p-4 text-sm italic leading-7 text-blue-900">
+                  <strong>Bisaya:</strong> Ang pre-registration makatabang sa
+                  mga organizers sa pagbanabana sa gidaghanon sa mga bata nga
+                  motambong, sa pag-andam sa mga kinahanglanon ug resources sa
+                  kalihokan, ug sa pagpahapsay ug pagpadasig sa check-in sa
+                  adlaw sa festival.
                 </p>
 
                 <p className="mt-3 leading-7 text-gray-700">
-                  Upon successful registration,
-                  an Explorer Number will be
-                  issued. This may be used for
-                  QR-based verification and
-                  faster check-in at the venue.
+                  Upon successful registration, an Explorer Number will be
+                  issued. This may be used for QR-based verification and faster
+                  check-in at the venue.
+                </p>
+
+                <p className="mt-3 rounded-xl bg-white/80 p-4 text-sm italic leading-7 text-blue-900">
+                  <strong>Bisaya:</strong> Human sa malampusong registration,
+                  hatagan ang bata og Explorer Number nga mahimong gamiton sa
+                  QR-based verification ug mas paspas nga check-in sa venue.
                 </p>
               </div>
 
               {/* =============================================
-                  WAIVER
+                  PARENT / GUARDIAN WAIVER
               ============================================= */}
 
               <div className="mt-6 rounded-2xl border-2 border-green-300 bg-green-50 p-6">
@@ -1884,184 +1986,304 @@ export default function RegistrationWizard() {
                   <FaShieldAlt className="text-2xl text-green-700" />
 
                   <h3 className="text-xl font-bold text-green-900">
-                    Parent / Guardian Waiver,
-                    Consent & Acknowledgment
+                    Parent / Guardian Waiver, Consent & Acknowledgment
                   </h3>
                 </div>
 
-                <div className="mt-4 space-y-4 text-sm leading-7 text-gray-700">
+                <p className="mt-3 text-sm leading-6 text-gray-600">
+                  Please read each statement carefully. The English statement
+                  is followed by a Bisaya explanation for clarity.
+                </p>
 
-                  <p>
-                    I certify that the
-                    information provided in this
-                    registration is true and
-                    correct to the best of my
-                    knowledge and that I am the
-                    parent, legal guardian, or
-                    duly authorized adult
-                    responsible for the child
-                    being registered.
-                  </p>
+                <div className="mt-5 space-y-4">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="certificationAccepted"
+                      checked={form.certificationAccepted}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
 
-                  <p>
-                    I voluntarily allow the
-                    child to participate in the{" "}
-                    <strong>
-                      Claver Children&apos;s
-                      Festival – Safari
-                      Adventure
-                    </strong>
-                    . I understand that the
-                    event includes recreational,
-                    educational, interactive,
-                    entertainment, and
-                    child-oriented activities.
-                  </p>
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        I certify that the information provided in this
+                        registration is true and correct to the best of my
+                        knowledge and that I am the parent, legal guardian, or
+                        duly authorized adult responsible for the child being
+                        registered.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Gipamatud-an nako nga tinuod ug
+                        husto ang mga impormasyon nga akong gihatag niini nga
+                        registration sumala sa akong nahibaloan, ug ako ang
+                        ginikanan, legal guardian, o awtorisadong hamtong nga
+                        responsable sa bata nga gi-register.
+                      </span>
+                    </span>
+                  </label>
 
-                  <p>
-                    I understand that reasonable
-                    safety measures will be
-                    implemented by the
-                    organizers and I agree to
-                    comply with all event
-                    guidelines, safety
-                    instructions, and directions
-                    of authorized event
-                    personnel.
-                  </p>
+                  {errors.certificationAccepted && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.certificationAccepted}
+                    </p>
+                  )}
 
-                  <p>
-                    In case of an emergency, I
-                    authorize the event
-                    organizers, designated
-                    personnel, and medical
-                    responders to provide
-                    appropriate first aid and/or
-                    facilitate necessary medical
-                    assistance when reasonably
-                    required.
-                  </p>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="participationConsent"
+                      checked={form.participationConsent}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
 
-                  <p>
-                    I acknowledge that
-                    participation is voluntary
-                    and that activities such as
-                    play, games, inflatable
-                    attractions, arts and crafts,
-                    and other interactive
-                    activities may involve
-                    ordinary risks associated
-                    with children&apos;s
-                    recreational activities.
-                  </p>
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        I voluntarily give permission for the child named in
+                        this registration to participate in the Claver
+                        Children&apos;s Festival – Safari Adventure.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Boluntaryo nakong gitugotan ang
+                        bata nga nakapangalan niini nga registration nga moapil
+                        sa Claver Children&apos;s Festival – Safari Adventure.
+                      </span>
+                    </span>
+                  </label>
+
+                  {errors.participationConsent && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.participationConsent}
+                    </p>
+                  )}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="riskAcknowledgment"
+                      checked={form.riskAcknowledgment}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
+
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        I understand that the event includes recreational,
+                        educational, interactive, entertainment, and
+                        child-oriented activities, and that ordinary risks may
+                        be associated with participation in these activities.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Nasabtan nako nga adunay mga
+                        dula, educational ug interactive activities, kalingawan,
+                        ug uban pang kalihokan para sa mga bata, ug adunay
+                        kasagarang risgo nga mahimong kauban sa pag-apil niini
+                        nga mga kalihokan.
+                      </span>
+                    </span>
+                  </label>
+
+                  {errors.riskAcknowledgment && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.riskAcknowledgment}
+                    </p>
+                  )}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="safetyRulesAccepted"
+                      checked={form.safetyRulesAccepted}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
+
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        I agree to comply with event guidelines, safety
+                        instructions, and the directions of authorized event
+                        personnel.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Mouyon ko nga sundon ang mga
+                        lagda sa event, safety instructions, ug mga panudlo sa
+                        awtorisadong personnel sa kalihokan.
+                      </span>
+                    </span>
+                  </label>
+
+                  {errors.safetyRulesAccepted && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.safetyRulesAccepted}
+                    </p>
+                  )}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="emergencyConsent"
+                      checked={form.emergencyConsent}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
+
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        In case of an emergency, I authorize the event
+                        organizers, designated personnel, and medical responders
+                        to provide appropriate first aid and/or facilitate
+                        necessary medical assistance when reasonably required.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Kung adunay emergency,
+                        gitugotan nako ang organizers, designated personnel, ug
+                        medical responders nga mohatag og angay nga first aid
+                        ug/o motabang sa pagpa-medical assistance kung
+                        gikinahanglan.
+                      </span>
+                    </span>
+                  </label>
+
+                  {errors.emergencyConsent && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.emergencyConsent}
+                    </p>
+                  )}
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-green-200 bg-white p-4">
+                    <input
+                      type="checkbox"
+                      name="fullWaiverAccepted"
+                      checked={form.fullWaiverAccepted}
+                      onChange={handleCheckboxChange}
+                      className="mt-1 h-5 w-5 shrink-0 accent-green-700"
+                    />
+
+                    <span className="text-sm leading-6 text-gray-700">
+                      <strong>
+                        I confirm that I have read and understood the
+                        Parent/Guardian Waiver, Consent & Acknowledgment above,
+                        including the Bisaya explanations provided for clarity,
+                        and I voluntarily agree to its terms.
+                      </strong>
+                      <span className="mt-2 block text-green-800">
+                        <strong>Bisaya:</strong> Gipamatud-an nako nga akong
+                        nabasa ug nasabtan ang Parent/Guardian Waiver, Consent &
+                        Acknowledgment sa taas, apil ang Bisaya nga pagpasabot
+                        aron mas klaro, ug boluntaryo akong mouyon sa mga
+                        kondisyon niini.
+                      </span>
+                    </span>
+                  </label>
+
+                  {errors.fullWaiverAccepted && (
+                    <p className="text-sm font-medium text-red-600">
+                      {errors.fullWaiverAccepted}
+                    </p>
+                  )}
                 </div>
 
-                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
-                  <input
-                    type="checkbox"
-                    name="waiverAccepted"
-                    checked={
-                      form.waiverAccepted
-                    }
-                    onChange={
-                      handleCheckboxChange
-                    }
-                    className="mt-1 h-5 w-5 accent-green-700"
-                  />
-
-                  <span className="text-sm leading-6 text-gray-700">
-                    I have read and understood
-                    the Parent / Guardian
-                    Waiver, Consent and
-                    Acknowledgment above. I
-                    voluntarily give my consent
-                    for the child named in this
-                    registration to participate
-                    in the event, and I certify
-                    that the information
-                    provided is accurate.
-                  </span>
-                </label>
-
-                {errors.waiverAccepted && (
-                  <p className="mt-2 text-sm font-medium text-red-600">
-                    {errors.waiverAccepted}
+                <div className="mt-5 rounded-xl border border-green-200 bg-white p-4 text-sm leading-6 text-gray-700">
+                  <p>
+                    <strong>Parent / Guardian:</strong>{" "}
+                    {buildFullName(
+                      form.parentSurname,
+                      form.parentFirstName,
+                      form.parentMiddleName
+                    )}
                   </p>
-                )}
+
+                  <p className="mt-1">
+                    <strong>Relationship to Child:</strong>{" "}
+                    {form.relationship}
+                  </p>
+
+                  <p className="mt-2 text-xs text-gray-500">
+                    Your acceptance of the required statements, together with
+                    the parent/guardian information and submission date/time,
+                    will be saved as part of the registration record.
+                  </p>
+                </div>
               </div>
 
               {/* =============================================
-                  KIT DISCLAIMER
+                  SAFARI EXPLORER KIT NOTICE
               ============================================= */}
 
               <div className="mt-6 rounded-2xl border-2 border-orange-300 bg-orange-50 p-6">
                 <h3 className="text-xl font-bold text-orange-900">
-                  🎒 Important Notice on Safari
-                  Explorer Kits
+                  🎒 Important Notice on Safari Explorer Kits
                 </h3>
 
                 <p className="mt-3 leading-7 text-gray-700">
-                  Safari Explorer Kits are
-                  available{" "}
-                  <strong>
-                    while supplies last.
-                  </strong>
+                  Safari Explorer Kits are available{" "}
+                  <strong>while supplies last.</strong>
+                </p>
+
+                <p className="mt-3 rounded-xl bg-white/80 p-4 text-sm italic leading-7 text-orange-900">
+                  <strong>Bisaya:</strong> Ang Safari Explorer Kits ihatag
+                  samtang adunay available nga supply.
                 </p>
 
                 <p className="mt-3 leading-7 text-gray-700">
                   Pre-registration{" "}
                   <strong>
-                    does not guarantee or
-                    reserve a Safari Explorer
-                    Kit.
+                    does not guarantee or reserve a Safari Explorer Kit.
                   </strong>{" "}
-                  Kits will be distributed only
-                  at the event venue on a{" "}
-                  <strong>
-                    first-come, first-served
-                    basis
-                  </strong>{" "}
-                  while supplies are available.
+                  Kits will be distributed only at the event venue on a{" "}
+                  <strong>first-come, first-served basis</strong> while supplies
+                  are available.
+                </p>
+
+                <p className="mt-3 rounded-xl bg-white/80 p-4 text-sm italic leading-7 text-orange-900">
+                  <strong>Bisaya:</strong> Ang pre-registration dili garantiya
+                  ug dili usab reservation sa Safari Explorer Kit. Ang mga kit
+                  ihatag lamang didto sa venue sa adlaw sa kalihokan base sa
+                  first-come, first-served basis samtang adunay available nga
+                  supply.
                 </p>
 
                 <p className="mt-3 leading-7 text-gray-700">
-                  The registered child must be
-                  physically present at the
-                  venue to claim the kit.
+                  The registered child must be physically present at the venue
+                  to claim the kit.
+                </p>
+
+                <p className="mt-3 rounded-xl bg-white/80 p-4 text-sm italic leading-7 text-orange-900">
+                  <strong>Bisaya:</strong> Kinahanglan nga personal nga naa ang
+                  registered nga bata sa venue aron makadawat sa kit.
                 </p>
 
                 <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4">
                   <input
                     type="checkbox"
                     name="kitDisclaimerAccepted"
-                    checked={
-                      form.kitDisclaimerAccepted
-                    }
-                    onChange={
-                      handleCheckboxChange
-                    }
-                    className="mt-1 h-5 w-5 accent-green-700"
+                    checked={form.kitDisclaimerAccepted}
+                    onChange={handleCheckboxChange}
+                    className="mt-1 h-5 w-5 shrink-0 accent-green-700"
                   />
 
                   <span className="text-sm leading-6 text-gray-700">
                     <strong>
-                      I understand
-                    </strong>{" "}
-                    that pre-registration does
-                    not guarantee a Safari
-                    Explorer Kit and that kits
-                    will be distributed at the
-                    venue on a first-come,
-                    first-served basis while
-                    supplies last.
+                      I understand that pre-registration does not guarantee a
+                      Safari Explorer Kit and that kits will be distributed at
+                      the venue on a first-come, first-served basis while
+                      supplies last.
+                    </strong>
+
+                    <span className="mt-2 block text-orange-900">
+                      <strong>Bisaya:</strong> Nasabtan nako nga ang
+                      pre-registration dili garantiya nga makadawat og Safari
+                      Explorer Kit ug nga ang mga kit ihatag sa venue base sa
+                      first-come, first-served basis samtang adunay available
+                      nga supply.
+                    </span>
                   </span>
                 </label>
 
                 {errors.kitDisclaimerAccepted && (
                   <p className="mt-2 text-sm font-medium text-red-600">
-                    {
-                      errors.kitDisclaimerAccepted
-                    }
+                    {errors.kitDisclaimerAccepted}
                   </p>
                 )}
               </div>
@@ -2087,8 +2309,13 @@ export default function RegistrationWizard() {
                   onClick={submit}
                   disabled={
                     loading ||
-                    !form.kitDisclaimerAccepted ||
-                    !form.waiverAccepted
+                    !form.certificationAccepted ||
+                    !form.participationConsent ||
+                    !form.riskAcknowledgment ||
+                    !form.safetyRulesAccepted ||
+                    !form.emergencyConsent ||
+                    !form.fullWaiverAccepted ||
+                    !form.kitDisclaimerAccepted
                   }
                   className="rounded-full bg-yellow-400 px-8 py-4 font-bold text-green-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white md:px-10"
                 >
@@ -2098,12 +2325,17 @@ export default function RegistrationWizard() {
                 </button>
               </div>
 
-              {!form.kitDisclaimerAccepted ||
-              !form.waiverAccepted ? (
+              {!form.certificationAccepted ||
+              !form.participationConsent ||
+              !form.riskAcknowledgment ||
+              !form.safetyRulesAccepted ||
+              !form.emergencyConsent ||
+              !form.fullWaiverAccepted ||
+              !form.kitDisclaimerAccepted ? (
                 <p className="mt-4 text-center text-xs text-gray-500">
-                  Please accept both required
-                  acknowledgments before
-                  submitting the registration.
+                  Please read and accept all required waiver, consent, and
+                  Safari Explorer Kit acknowledgments before submitting the
+                  registration.
                 </p>
               ) : null}
             </>
